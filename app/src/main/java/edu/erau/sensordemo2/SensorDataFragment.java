@@ -485,6 +485,6 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         locManager.removeUpdates(locationListener);
 
         sensorManager.unregisterListener(this);
-        stopTimer();
+        //stopTimer();
     }
 }

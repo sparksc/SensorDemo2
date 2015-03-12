@@ -33,17 +33,17 @@ public class MainActivity extends Activity {
             FragmentTransaction ft = getFragmentManager().beginTransaction();
 
             //Adding the fragment to the activity in the appropriate container
-            ft.add(R.id.fragment_container, new SensorDataFragment(), "sensor_data_fragment");
+            ft.add(R.id.sensorData, new SensorDataFragment(), "sensor_data_fragment");
 
             //Committing the change so that it is actually processed.
             ft.commit();
         }
 
-        MapFragment mf = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+  /*      MapFragment mf = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         GoogleMap map = mf.getMap();
 
         LatLng pos = new LatLng(29.18857,-81.0487);
         map.addMarker(new MarkerOptions().position(pos));
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 15));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 15)); */
     }
 }
