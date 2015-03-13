@@ -163,6 +163,8 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
 
         mf = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         pos = new LatLng(29.18857, -81.0487);    // stating location at Lehman Building at ERAU
+
+        addViewButton();
     }
 
     /**
@@ -262,6 +264,20 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         if (map != null) {
             map.addMarker(new MarkerOptions().position(pos));
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 15));
+        }
+    }
+
+    /**
+     *  Programmatically adds the view map button to the Portrait layout.
+     */
+    public void addViewButton(){
+        // if in landscape mode, don't show the view map button
+        if(dualMode == false){
+            viewButton.setVisibility(View.INVISIBLE);
+        }
+        // show view button in portrait mode
+        if(dualMode == true){
+            viewButton.setVisibility(View.VISIBLE);
         }
     }
 
@@ -484,6 +500,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
             map = mf.getMap();
             startLocation();
         }
+        addViewButton();
 
         // start the timer for roll and pitch sensors
         setupTimer();

@@ -139,6 +139,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:text="@string/btn_viewMap"
+        android:visibility="invisible"
         android:onClick="launchView"/>
 
     <Button
@@ -147,6 +148,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:text="@string/btn_fullScreen"
+        android:visibility="invisible"
         android:onClick="launchView"/>
 
 </LinearLayout>
