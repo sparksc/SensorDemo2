@@ -1,7 +1,6 @@
 package edu.erau.sensordemo2;
 
 import android.app.Fragment;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -16,7 +15,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -34,7 +32,21 @@ import java.text.DecimalFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
+/**
+ * Creates the SensorDataFragment. This fragment calculates and displays the roll, pitch, latitude,
+ * longitude, and bearing of the user's device. <p></p>
+ * The fragment also features a toggle button that allows the user to stop collecting when the
+ * button is in the "Off" state. There is also a "View Map" button that is only displayed in
+ * portrait mode that takes the user's location and displays the location using the Google Maps
+ * application. When the application is in landscape mode, the application shall consist of an
+ * actionbar that contains a button, "Full Screen," to open the user's current location in the
+ * Google Maps application.<p></p>
+ * This fragment also uses the location sensors to update the map marker within the map fragment
+ * displayed only in landscape mode.
+ *
+ * @author Cierra Sparks, Brandon Bielefeld
+ * @date 3/5/2015
+ */
 public class SensorDataFragment extends Fragment implements SensorEventListener {
     // Buttons
     private Button viewButton;
@@ -56,22 +68,24 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     private SensorManager sensorManager;
     private Sensor sensor;
     float[] rotationalMatrix = new float[9];
-
     float azimuth_angle;
     float pitch_angle;
     float roll_angle;
+    private Timer logTimer;
 
+    // Map variables
     private MapFragment mf;
     private GoogleMap map;
     private LatLng pos;
-
-    // Format the number of decimals printed
-    DecimalFormat decimalFormat = new DecimalFormat("0.####");
-
-    private Timer logTimer;
     boolean dualMode;
-    int curIndex = 0;
 
+    DecimalFormat decimalFormat = new DecimalFormat("0.####");  // Format the number of decimals printed
+
+    /**
+     * Configure all elements for the SensorDataFragment after the fragment has been created.
+     *
+     * @param savedInstanceState
+     */
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -82,15 +96,13 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         // Check if displaying 2 fragments or 1 fragment
         dualMode = (sensorPanel != null) && (sensorPanel.getVisibility() == View.VISIBLE);
 
-        //
+/*        // Source: FragmentDemonstration2
         if(savedInstanceState != null){
-
         }
 
         //
         if(dualMode){
-
-        }
+        }*/
 
         // Acquire a reference to the system Location Manager
         locManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
@@ -98,8 +110,11 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         // Configure all fields with their appropriate id
         configureAllIds();
 
-        map = mf.getMap();
-        startLocation();
+        // If in landscape mode, load the map fragment
+        if(dualMode == false) {
+            map = mf.getMap();
+            startLocation();
+        }
 
         toggleBtn.setChecked(true);  // start the sensors on startup
 
@@ -111,11 +126,11 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         // Get Sensor Manager Instance
         sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-
-        //setupTimer();
     }
 
     /**
+     * Inflates the fragment to fit the device's screen.
+     *
      * Source: http://stackoverflow.com/questions/11532361/error-inflating-fragment
      * @param inflater
      * @param container
@@ -127,6 +142,9 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         return inflater.inflate(R.layout.fragment_sensor_data, container,false);
     }
 
+    /**
+     * Configures all XML layout IDs with their respective component within the fragment.
+     */
     public void configureAllIds() {
         // Configure all buttons
         viewButton = (Button) getActivity().findViewById(R.id.btn_viewMap);
@@ -148,38 +166,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     }
 
     /**
-     * Source: Class example FragDemonstration2
-     */
-//    public void showSenorPanel(){
-//
-//        // 2
-//        if(dualMode){
-//            SensorDataFragment frag = (SensorDataFragment) getFragmentManager().findFragmentById(R.id.sensorData);
-//
-//            if ((frag == null) || (curIndex != frag.getShownMovieIndex())) {
-//                frag = SensorDataFragment.getInstance(curIndex);
-//
-//                // Execute a transaction, replacing any existing fragment
-//                // with this one inside the frame.
-//                FragmentTransaction ft =  getFragmentManager().beginTransaction();
-//                ft.replace(R.id.sensorData, frag);
-//                ft.addToBackStack(null);
-//                ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-//                ft.commit();
-//            }
-//        }
-//
-//        //Single Display launch of new activity
-//        else {
-//            Intent intent = new Intent();
-//            intent.setClass(getActivity(), MainActivity.class);
-//            intent.putExtra("movieIndex", curIndex);
-//            startActivity(intent);
-//        }
-//    }
-
-    /**
-     * Creates a listener for the send button
+     * Creates a listener for the view map button to open the location in Google Maps.
      */
     View.OnClickListener sendListener = new View.OnClickListener() {
         public void onClick(View v) {
@@ -190,6 +177,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     /**
      * Called when the user selects the View Map Button. Opens the device's current coordinates
      * in Google Maps.
+     *
      * @param view
      */
     public void openMap(View view) {
@@ -216,7 +204,8 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     }
 
     /**
-     * Listener for the toggle button
+     * Listener for the toggle button.
+     * When toggle button is "On" collect sensor data, otherwise don't collect data.
      */
     CompoundButton.OnCheckedChangeListener checkListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
@@ -226,7 +215,6 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
                 Log.i("ToggleButtonDemo","The Toggle Button was selected.");
 
                 onResume();
-                //startTimer();
             }
             else{
                 // Write to logcat of the current state
@@ -235,7 +223,6 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
                 // Set the text from the xml to "0.00" for all data values
                 setTextZero();
                 onPause();  // pause the sensors
-                //stopTimer();
             }
         }
     };
@@ -279,7 +266,9 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     }
 
     /**
-     * Defines a listener that responds to location updates
+     * Defines a listener that responds to location updates. Updates the map marker while in
+     * landscape mode.
+     *
      * Source: http://developer.android.com/guide/topics/location/strategies.html
      */
     LocationListener locationListener = new LocationListener() {
@@ -290,19 +279,31 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
             //If you have never had a location or you have a network based location, update the location to the Lehman Building at ERAU.
             if ((curLocation == null) || (curLocation.getProvider().equals(LocationManager.NETWORK_PROVIDER))) {
                 curLocation = location;
-                newLocation(curLocation);
+
+                // if in landscape mode, update the Google map marker location
+                if(dualMode == false) {
+                    newLocation(curLocation);
+                }
             }
 
             //If you have a GPS location, always update the location.
             else if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
                 curLocation = location;
-                newLocation(curLocation);
+
+                // if in landscape mode, update the Google map marker location
+                if(dualMode == false) {
+                    newLocation(curLocation);
+                }
             }
 
             //If you have not had a GPS update in over 2 minutes, you can use a network location to keep you going.
             else if ((location.getTime() - curLocation.getTime()) > (60*2*1000)) {
                 curLocation = location;
-                newLocation(curLocation);
+
+                // if in landscape mode, update the Google map marker location
+                if(dualMode == false) {
+                    newLocation(curLocation);
+                }
             }
             else {
                 //Do nothing
@@ -353,7 +354,9 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     };
 
     /**
-     * Updates the current latitude, longitude and bearing
+     * Updates the current latitude, longitude and bearing labels. The direction label is also
+     * updated.
+     *
      * @param latitude - the current value of the user's latitude
      * @param longitude - the current value of the user's longitude
      * @param bearing - the current value of the user's bearing
@@ -364,15 +367,14 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         longitudeUpdate.setText(decimalFormat.format(longitude).toString());
         bearingUpdate.setText(decimalFormat.format(bearing).toString());
 
-        //Log.i("Latitude, Longitude:", Double.toString(latitude) + ", " + Double.toString(longitude));
-        //Log.i("Lat(), Long():", cardinalDirection(latitude) + ", " + cardinalDirection(longitude));
-
         // Get the cardinal direction of the current location
         latitudeDirectionUpdate.setText(cardinalDirection(latitude));
         longitudeDirectionUpdate.setText(cardinalDirection(longitude));
     }
 
     /**
+     * Creates the timer to update the roll and pitch values displayed once every second.
+     *
      * Source: http://www.steveody.com/?p=12
      */
     public void setupTimer(){
@@ -388,37 +390,27 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
 
     /**
      * Timer to update the current sensor readings once every second
+     * Called by the setupTimer() method.
      */
     private void startTimer()
     {
         getActivity().runOnUiThread(Timer_Tasks);
-
-        //logTimer = new Timer();
-        //logTimer.scheduleAtFixedRate(new TimerTask() {
-           /* public void run()
-            {
-                //getActivity().runOnUiThread( -> {
-                getActivity().runOnUiThread( new Runnable() {
-                public void run(){
-                    rollUpdate.setText(decimalFormat.format(roll_angle).toString());
-                    pitchUpdate.setText(decimalFormat.format(pitch_angle).toString());
-                    updateLocation(curLocation.getLatitude(), curLocation.getLongitude(), curLocation.getBearing());
-                }
-            });
-        }},0, 1000);    */
     }
 
+    /**
+     * Creates the thread to update the sensor readings in the text fields.
+     * Called by the startTimer() method.
+     */
     private Runnable Timer_Tasks = new Runnable() {
         @Override
         public void run() {
             rollUpdate.setText(decimalFormat.format(roll_angle).toString());
             pitchUpdate.setText(decimalFormat.format(pitch_angle).toString());
-            //updateLocation(curLocation.getLatitude(), curLocation.getLongitude(), curLocation.getBearing());
         }
     };
 
     /**
-     * Stops the timer and releases resources
+     * Stops the timer and releases resources used by the timer.
      */
     public void stopTimer()
     {
@@ -428,6 +420,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
 
     /**
      * Calculate the current cardinal direction of the device
+     *
      * Source: http://stackoverflow.com/questions/2131195/cardinal-direction-algorithm-in-java
      * @param x - the current location of the device
      * @return - the current location of the device as a cardinal direction
@@ -442,7 +435,12 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         return directions[(int)Math.round(((x % 360) / 45)) % 8];
     }
 
-    // Source: http://stackoverflow.com/questions/14740808/android-problems-calculating-the-orientation-of-the-device
+    /**
+     * Gets the device's current roll and pitch and update the global values.
+     *
+     * Source: http://stackoverflow.com/questions/14740808/android-problems-calculating-the-orientation-of-the-device
+     * @param event
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
         // Convert rotation-vector to a 4x4 matrix.
@@ -453,15 +451,22 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         azimuth_angle = (float) Math.toDegrees(event.values[0]);
         pitch_angle = (float) Math.toDegrees(event.values[1]);
         roll_angle = (float) Math.toDegrees(event.values[2]);
-
-        // Set the roll and pitch to the screen
-       // rollUpdate.setText(decimalFormat.format(roll_angle).toString());
-      //  pitchUpdate.setText(decimalFormat.format(pitch_angle).toString());
     }
 
+    /**
+     * Not implemented.
+     *
+     * @param sensor
+     * @param accuracy
+     */
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
+    /**
+     * When the fragment is resumed, the location manager updates the location of the user's device
+     * once every second. The timer for the roll and pitch sensors are resumed. If the device
+     * is in landscape mode, the map fagment will also be displayed.
+     */
     @Override
     public void onResume()
     {
@@ -474,9 +479,20 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         // Configure sensors
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
 
-        //setupTimer();
+        // If in landscape mode, load the map fragment
+        if(dualMode == false) {
+            map = mf.getMap();
+            startLocation();
+        }
+
+        // start the timer for roll and pitch sensors
+        setupTimer();
     }
 
+    /**
+     * When the fragment is paused, the location manager, sensor manager, and the timer will all
+     * release their resources and unregister their resources.
+     */
     public void onPause()
     {
         super.onPause();
@@ -485,6 +501,6 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         locManager.removeUpdates(locationListener);
 
         sensorManager.unregisterListener(this);
-        //stopTimer();
+        stopTimer();
     }
 }

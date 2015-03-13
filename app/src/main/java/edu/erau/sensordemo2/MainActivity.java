@@ -11,7 +11,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 /**
- * Created by Cierra on 3/5/2015.
+ * Creates the Main Activity to launch the SensorDataFragment.
+ *
+ * @author Cierra Sparks, Brandon Bielefeld
+ * @date 3/5/2015
  */
 public class MainActivity extends Activity {
 
@@ -27,6 +30,8 @@ public class MainActivity extends Activity {
          *
          * If you do not have this transaction in the if, you will also notice that when you rotate
          * the screen that weird things will happen as it will try to recreate the fragment.
+         *
+         * Source: class example DynamicFragmentDemo
          */
         if(savedInstanceState == null) {
             //Creating a transaction
@@ -38,12 +43,5 @@ public class MainActivity extends Activity {
             //Committing the change so that it is actually processed.
             ft.commit();
         }
-
-  /*      MapFragment mf = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
-        GoogleMap map = mf.getMap();
-
-        LatLng pos = new LatLng(29.18857,-81.0487);
-        map.addMarker(new MarkerOptions().position(pos));
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 15)); */
     }
 }
