@@ -9,12 +9,28 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
+import android.os.Bundle;
+import android.os.SystemClock;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Chronometer;
+import android.widget.TextView;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -27,6 +43,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.w3c.dom.Text;
 
 import java.text.DecimalFormat;
 import java.util.Timer;
@@ -47,7 +65,7 @@ import java.util.TimerTask;
  * @author Cierra Sparks, Brandon Bielefeld
  * @date 3/5/2015
  */
-public class SensorDataFragment extends Fragment implements SensorEventListener {
+public class SensorDataFragment extends Fragment implements SensorEventListener{
     // Buttons
     private Button viewButton;
     private Button btnFullScreen;
@@ -59,8 +77,18 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     private TextView latitudeUpdate;
     private TextView latitudeDirectionUpdate;
     private TextView longitudeDirectionUpdate;
+
     private TextView longitudeUpdate;
     private TextView bearingUpdate;
+
+    //declare strings that will concatenate for easy displaying
+    String pitchStr, rollStr, latitudeStr, longitudeStr;
+
+
+
+    // declare fields to store last position
+    private static double untouchedLatitude;
+    private static double untouchedLongitude;
 
     // Sensors
     private LocationManager locManager;
@@ -79,7 +107,8 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     private LatLng pos;
     boolean dualMode;
 
-    DecimalFormat decimalFormat = new DecimalFormat("0.####");  // Format the number of decimals printed
+    // Format the number of decimals printed
+    DecimalFormat decimalFormat = new DecimalFormat("0.####");
 
     /**
      * Configure all elements for the SensorDataFragment after the fragment has been created.
@@ -94,6 +123,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         View sensorPanel = getActivity().findViewById(R.id.sensorData);
 
         // Check if displaying 2 fragments or 1 fragment
+        // dual mode will be true if 2 fragments are displayed
         dualMode = (sensorPanel != null) && (sensorPanel.getVisibility() == View.VISIBLE);
 
 /*        // Source: FragmentDemonstration2
@@ -119,9 +149,12 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         toggleBtn.setChecked(true);  // start the sensors on startup
 
         // Register the listeners for the button and toggle button
-        viewButton.setOnClickListener(sendListener);
-        btnFullScreen.setOnClickListener(sendListener);
-        toggleBtn.setOnCheckedChangeListener(checkListener);
+        if(dualMode == false) {
+            viewButton.setOnClickListener(sendListener);
+            btnFullScreen.setOnClickListener(sendListener);
+            toggleBtn.setOnCheckedChangeListener(checkListener);
+        }
+
 
         // Get Sensor Manager Instance
         sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
@@ -148,7 +181,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     public void configureAllIds() {
         // Configure all buttons
         viewButton = (Button) getActivity().findViewById(R.id.btn_viewMap);
-        btnFullScreen = (Button) getActivity().findViewById(R.id.btn_fullScreen);
+        //btnFullScreen = (Button) getActivity().findViewById(R.id.btn_fullScreen);
         toggleBtn = (ToggleButton) getActivity().findViewById(R.id.toggled);
 
         // Configure all text fields
@@ -158,8 +191,8 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         longitudeUpdate = (TextView) getActivity().findViewById(R.id.longitudeData);
         bearingUpdate = (TextView) getActivity().findViewById(R.id.bearingData);
 
-        latitudeDirectionUpdate = (TextView) getActivity().findViewById(R.id.latitudeDirection);
-        longitudeDirectionUpdate = (TextView) getActivity().findViewById(R.id.longitudeDirection);
+        // latitudeDirectionUpdate = (TextView) getActivity().findViewById(R.id.latitudeDirection);
+        // longitudeDirectionUpdate = (TextView) getActivity().findViewById(R.id.longitudeDirection);
 
         mf = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         pos = new LatLng(29.18857, -81.0487);    // stating location at Lehman Building at ERAU
@@ -186,15 +219,15 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         // If the toggle button is "On" open the map with the current coordinates
         if (toggleBtn.isChecked() == true) {
             // Get the text from the appropriate text boxes
-            String strLatitude = latitudeUpdate.getText().toString();
-            String strLongitude = longitudeUpdate.getText().toString();
+            // String strLatitude = latitudeUpdate.getText().toString(); //this variable used to be with the uri
+            //  String strLongitude = longitudeUpdate.getText().toString(); //this variable used to be with the uri
 
             // Confirm data is received from user
-            Log.i("Location Viewer Test", strLatitude + ", " + strLongitude);
+            Log.i("Location Viewer Test", untouchedLatitude + ", " + untouchedLongitude);
 
             // Creates a geo URI and launches the appropriate intent
             //From developer.android.com/reference/android/content/Intent.html
-            Uri uri = Uri.parse("geo:" + strLatitude + "," + strLongitude);
+            Uri uri = Uri.parse("geo:" + untouchedLatitude + "," + untouchedLongitude);
             startActivity(new Intent(Intent.ACTION_VIEW, uri));
         }
 
@@ -273,11 +306,11 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     public void addViewButton(){
         // if in landscape mode, don't show the view map button
         if(dualMode == false){
-            viewButton.setVisibility(View.INVISIBLE);
+            //viewButton.setVisibility(View.INVISIBLE);
         }
         // show view button in portrait mode
         if(dualMode == true){
-            viewButton.setVisibility(View.VISIBLE);
+            //  viewButton.setVisibility(View.VISIBLE);
         }
     }
 
@@ -324,6 +357,8 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
             else {
                 //Do nothing
             }
+            untouchedLatitude = curLocation.getLatitude();
+            untouchedLongitude = curLocation.getLongitude();
             updateLocation(curLocation.getLatitude(), curLocation.getLongitude(), curLocation.getBearing());
         }
 
@@ -378,14 +413,29 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
      * @param bearing - the current value of the user's bearing
      */
     private void updateLocation(double latitude, double longitude, double bearing){
-        // Update the text views with the current location
-        latitudeUpdate.setText(decimalFormat.format(latitude).toString());
-        longitudeUpdate.setText(decimalFormat.format(longitude).toString());
-        bearingUpdate.setText(decimalFormat.format(bearing).toString());
+
+
 
         // Get the cardinal direction of the current location
-        latitudeDirectionUpdate.setText(cardinalDirection(latitude));
-        longitudeDirectionUpdate.setText(cardinalDirection(longitude));
+        // latitudeDirectionUpdate.setText(cardinalDirection(latitude));
+        // longitudeDirectionUpdate.setText(cardinalDirection(longitude));
+        // Update the text views with the current location
+        if (latitude > 0) {
+            latitudeStr = String.format("%.2f", latitude) + "\tN";
+        } else {
+            latitudeStr = String.format("%.2f", latitude * -1)  + "\tS";
+        }
+        if (longitude > 0) {
+            longitudeStr = String.format("%.2f", longitude) + "\tE";
+        } else {
+            longitudeStr = String.format("%.2f", longitude * -1) + "\tW";
+        }
+        latitudeUpdate.setText(latitudeStr);
+        longitudeUpdate.setText(longitudeStr);
+
+        //latitudeUpdate.setText(decimalFormat.format(latitude).toString());
+        //longitudeUpdate.setText(decimalFormat.format(longitude).toString());
+        bearingUpdate.setText(decimalFormat.format(bearing).toString());
     }
 
     /**
@@ -421,7 +471,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
         @Override
         public void run() {
             rollUpdate.setText(decimalFormat.format(roll_angle).toString());
-            pitchUpdate.setText(decimalFormat.format(pitch_angle).toString());
+            pitchUpdate.setText(decimalFormat.format(pitch_angle *-1).toString());
         }
     };
 
@@ -481,7 +531,7 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
     /**
      * When the fragment is resumed, the location manager updates the location of the user's device
      * once every second. The timer for the roll and pitch sensors are resumed. If the device
-     * is in landscape mode, the map fagment will also be displayed.
+     * is in landscape mode, the map fragment will also be displayed.
      */
     @Override
     public void onResume()
@@ -510,6 +560,8 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
      * When the fragment is paused, the location manager, sensor manager, and the timer will all
      * release their resources and unregister their resources.
      */
+
+
     public void onPause()
     {
         super.onPause();
@@ -519,5 +571,12 @@ public class SensorDataFragment extends Fragment implements SensorEventListener 
 
         sensorManager.unregisterListener(this);
         stopTimer();
+    }
+    public static double getUntouchedLatitude() {
+        return untouchedLatitude;
+    }
+
+    public static double getUntouchedLongitude() {
+        return untouchedLongitude;
     }
 }
